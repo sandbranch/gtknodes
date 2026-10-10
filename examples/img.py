@@ -24,7 +24,7 @@ from matplotlib.backends.backend_gtk3agg import (
         FigureCanvasGTK3Agg as FigureCanvas)
 from matplotlib.figure import Figure
 
-from scipy import misc
+from scipy import datasets
 from scipy import ndimage
 import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
@@ -50,7 +50,7 @@ class ImgSrcNode(GtkNodes.Node):
         self.connect("node_func_clicked", self.remove)
 
 
-        self.img = misc.face()
+        self.img = datasets.face()
 
         f = Figure(figsize=(5, 4), dpi=100)
         self.a = f.add_subplot(111)
@@ -98,9 +98,9 @@ class ImgSrcNode(GtkNodes.Node):
         src = self.combobox.get_active_text()
 
         if src == "face":
-            self.img = misc.face()
+            self.img = datasets.face()
         elif src == "ascent":
-            self.img = misc.ascent()
+            self.img = datasets.ascent()
 
         self.draw_image()
         self.node_socket_output.write(pickle.dumps(self.img))
