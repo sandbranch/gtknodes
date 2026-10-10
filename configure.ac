@@ -42,7 +42,8 @@ PKG_CHECK_MODULES([GLADE2], [gladeui-2.0],
 
 
 if test "x$ac_gladeui_catdir" = x ; then
-  AC_MSG_ERROR([Couldn't find glade-2.0 catalog directory])
+  AC_MSG_WARN([gladeui-2.0 not found, installing the Glade catalog to \${datadir}/glade/catalogs])
+  ac_gladeui_catdir='${datadir}/glade/catalogs'
 fi
 
 AC_SUBST(GLADEUI_CATDIR, $ac_gladeui_catdir)
