@@ -967,6 +967,15 @@ gtk_nodes_node_remove (GtkContainer *container,
           continue;
         }
 
+      /* the socket may outlive the node (someone else may hold a
+       * reference to it), and it signals when it is destroyed: its
+       * handlers must not point to this node any more */
+      g_signal_handler_disconnect (child->socket, child->drag_begin_signal);
+      g_signal_handler_disconnect (child->socket, child->drag_end_signal);
+      g_signal_handler_disconnect (child->socket, child->socket_connect_signal);
+      g_signal_handler_disconnect (child->socket, child->socket_disconnect_signal);
+      g_signal_handler_disconnect (child->socket, child->socket_destroyed_signal);
+
       gtk_widget_unparent (GTK_WIDGET (child->socket));
       GTK_CONTAINER_CLASS (gtk_nodes_node_parent_class)->remove (container,
                                                                  widget);
