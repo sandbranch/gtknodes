@@ -132,6 +132,12 @@ static void     gtk_nodes_node_view_size_allocate       (GtkWidget           *wi
                                                          GtkAllocation       *allocation);
 static gboolean gtk_nodes_node_view_draw                (GtkWidget           *widget,
                                                          cairo_t             *cr);
+static void     gtk_nodes_node_view_get_preferred_width  (GtkWidget          *widget,
+                                                          gint               *minimum,
+                                                          gint               *natural);
+static void     gtk_nodes_node_view_get_preferred_height (GtkWidget          *widget,
+                                                          gint               *minimum,
+                                                          gint               *natural);
 
 /* widget class events */
 static gboolean gtk_nodes_node_view_button_press_event  (GtkWidget           *widget,
@@ -201,6 +207,8 @@ static void gtk_nodes_node_view_class_init(GtkNodesNodeViewClass *class)
   widget_class->unrealize     = gtk_nodes_node_view_unrealize;
   widget_class->size_allocate = gtk_nodes_node_view_size_allocate;
   widget_class->draw          = gtk_nodes_node_view_draw;
+  widget_class->get_preferred_width  = gtk_nodes_node_view_get_preferred_width;
+  widget_class->get_preferred_height = gtk_nodes_node_view_get_preferred_height;
 
   /* widget events */
   widget_class->button_press_event  = gtk_nodes_node_view_button_press_event;
@@ -432,6 +440,58 @@ gtk_nodes_node_view_unrealize (GtkWidget *widget)
   GTK_WIDGET_CLASS (gtk_nodes_node_view_parent_class)->unrealize (widget);
 }
 
+/* how far the children reach to the right (vertical FALSE) or down */
+static gint
+gtk_nodes_node_view_extent (GtkWidget *widget,
+                            gboolean   vertical)
+{
+  GtkNodesNodeViewPrivate *priv;
+  GList *l;
+  gint extent = 0;
+
+
+  priv = gtk_nodes_node_view_get_instance_private (GTKNODES_NODE_VIEW (widget));
+
+  for (l = priv->children; l; l = l->next)
+    {
+      GtkNodesNodeViewChild *child = l->data;
+      GtkRequisition requisition;
+      gint pos, size;
+
+      if (!gtk_widget_get_visible (child->widget))
+        continue;
+
+      gtk_widget_get_preferred_size (child->widget, &requisition, NULL);
+
+      g_object_get (G_OBJECT (child->widget), vertical ? "y" : "x", &pos, NULL);
+
+      if (vertical)
+        size = MAX (requisition.height, child->rectangle.height);
+      else
+        size = MAX (requisition.width, child->rectangle.width);
+
+      extent = MAX (extent, pos + size);
+    }
+
+  return extent;
+}
+
+static void
+gtk_nodes_node_view_get_preferred_width (GtkWidget *widget,
+                                         gint      *minimum,
+                                         gint      *natural)
+{
+  *minimum = *natural = gtk_nodes_node_view_extent (widget, FALSE);
+}
+
+static void
+gtk_nodes_node_view_get_preferred_height (GtkWidget *widget,
+                                          gint      *minimum,
+                                          gint      *natural)
+{
+  *minimum = *natural = gtk_nodes_node_view_extent (widget, TRUE);
+}
+
 static void
 gtk_nodes_node_view_size_allocate (GtkWidget     *widget,
                                    GtkAllocation *allocation)
@@ -488,8 +548,12 @@ gtk_nodes_node_view_size_allocate (GtkWidget     *widget,
         allocation->height = h;
     }
 
+  /* (the view's size is what its children need: see
+   * gtk_nodes_node_view_get_preferred_width. It once set its own size
+   * request here, which queues a resize in the middle of laying out: GTK
+   * then dropped later resizes of the view, and nodes kept stale sizes,
+   * after a style change for one) */
   gtk_widget_set_allocation (widget, allocation);
-  gtk_widget_set_size_request (widget, allocation->width, allocation->height);
 
   if (!gtk_widget_get_realized (widget))
     return;
