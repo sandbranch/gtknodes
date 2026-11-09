@@ -106,6 +106,11 @@ struct _GtkNodesNodeViewChild
 
   gint start_x, start_y;        /* node drag start position */
   gint dx, dy;                  /* node drag deltas */
+
+  gdouble start_root_x;         /* pointer on the screen at the drag start */
+  gdouble start_root_y;
+  gint start_rect_x;            /* the child's place at the drag start */
+  gint start_rect_y;
 };
 
 
@@ -713,10 +718,21 @@ gtk_nodes_node_view_child_motion_notify_event (GtkWidget         *widget,
 
       if (priv->action == ACTION_DRAG_CHILD)
         {
+          /* the place at the start plus how far the pointer has moved on
+           * the screen: event->x and y are relative to where the child's
+           * window was drawn last, which lags behind its place while it
+           * moves, so taking the offset from them added it up again at
+           * each move until the next layout (the node ran off, more so on
+           * a large canvas) */
+          gint x = child->start_rect_x
+                   + (gint) (event->x_root - child->start_root_x);
+          gint y = child->start_rect_y
+                   + (gint) (event->y_root - child->start_root_y);
+
           gtk_nodes_node_block_expander (GTKNODES_NODE (child->widget));
           gtk_nodes_node_view_move_child(node_view, child,
-                                         (gint) event->x - child->start_x,
-                                         (gint) event->y - child->start_y);
+                                         x - child->rectangle.x,
+                                         y - child->rectangle.y);
         }
 
       if (priv->action == ACTION_RESIZE)
@@ -801,6 +817,11 @@ gtk_nodes_node_view_child_button_press_event (GtkWidget        *widget,
 
       child->start_x = (gint) event->x;
       child->start_y = (gint) event->y;
+
+      child->start_root_x = event->x_root;
+      child->start_root_y = event->y_root;
+      child->start_rect_x = child->rectangle.x;
+      child->start_rect_y = child->rectangle.y;
 
       gtk_widget_get_allocation(child->widget, &child_alloc);
       child->dx = (gint) event->x - (child_alloc.x + child_alloc.width);
