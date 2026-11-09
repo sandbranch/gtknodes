@@ -109,6 +109,7 @@ struct _GtkNodesNodePrivate
   GtkAllocation allocation;
 
   GdkRectangle rectangle_func;  /* functional button ("close") */
+  gint func_space;              /* room kept for it */
 
   gchar *icon_name;             /* the name of the icon to display */
 
@@ -525,6 +526,7 @@ gtk_nodes_node_init (GtkNodesNode *node)
   /* XXX set some defaults here, some are not properly configurable yet */
   priv->rectangle_func.width  = 20;
   priv->rectangle_func.height = 20;
+  priv->func_space            = 25;
 
   priv->width  = 100;
   priv->height = 100;
@@ -785,8 +787,8 @@ gtk_nodes_node_adjust_size_request (GtkWidget      *widget,
   if (orientation == GTK_ORIENTATION_HORIZONTAL)
     {
       /* ajust extra pixel size of "func" button as well */
-      *minimum_size += h + 25; /* XXX */
-      *natural_size += h + 25;
+      *minimum_size += h + priv->func_space;
+      *natural_size += h + priv->func_space;
     }
   else
     {
@@ -842,7 +844,7 @@ gtk_nodes_node_size_allocate (GtkWidget        *widget,
       gtk_widget_set_allocation (priv->expander, &alloc);
 
       /* now adapt the allocation */
-      priv->allocation.width = alloc.width + left + right + 25; /* XXX */
+      priv->allocation.width = alloc.width + left + right + priv->func_space;
 
       alloc.y = 0;
       gtk_nodes_node_size_allocate_visible_sockets (node, &alloc);
@@ -1378,7 +1380,7 @@ gtk_nodes_node_draw_frame(GtkNodesNode        *node,
   gtk_style_context_restore (c);
 
   /* set functional icon allocation for clicks */
-  priv->rectangle_func.x = allocation->x + allocation->width - 25; /* XXX */
+  priv->rectangle_func.x = allocation->x + allocation->width - priv->func_space;
   priv->rectangle_func.y = allocation->y + priv->padding.top;
 
   if (priv->icon_name)
@@ -1700,6 +1702,17 @@ gtk_nodes_node_set_socket_radius (GtkNodesNode  *node,
   priv = gtk_nodes_node_get_instance_private (node);
 
   priv->socket_radius = radius;
+
+  /* the node's padding and its functional icon scale with the sockets
+   * (a node made smaller with them, as when zoomed out, kept its fixed
+   * 10 px padding and 25 px for the icon, and ran into its neighbours) */
+  priv->padding.top    = (gint) (10.0 * radius / 8.0 + 0.5);
+  priv->padding.bottom = priv->padding.top;
+  priv->padding.left   = priv->padding.top;
+  priv->padding.right  = priv->padding.top;
+  priv->rectangle_func.width  = (gint) (20.0 * radius / 8.0 + 0.5);
+  priv->rectangle_func.height = priv->rectangle_func.width;
+  priv->func_space = (gint) (25.0 * radius / 8.0 + 0.5);
 
   /* XXX we take the socket radius as the required (minimum) margin,
    * update it here for now
