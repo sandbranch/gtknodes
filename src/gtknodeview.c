@@ -1314,7 +1314,7 @@ gtk_nodes_node_view_get_child_property (GtkContainer *container,
     case CHILD_PROP_Y:
       if (GTKNODES_IS_NODE (node_child->widget))
         g_object_get (G_OBJECT(node_child->widget),
-                      "x", &node_child->rectangle.y, NULL);
+                      "y", &node_child->rectangle.y, NULL);
       g_value_set_int (value, node_child->rectangle.y);
       break;
     case CHILD_PROP_WIDTH:
