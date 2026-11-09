@@ -1906,9 +1906,10 @@ gtk_nodes_node_get_sources (GtkNodesNode *node)
 }
 
 /**
- * gtk_nodes_node_set_icon_name
+ * gtk_nodes_node_set_icon_name:
  * @node: a GtkNodesNode
- * @icon_name: the name of the icon to display
+ * @icon_name: (nullable): the name of the icon to display, or %NULL for
+ *   no icon (and so no functional button)
  */
 
 void
